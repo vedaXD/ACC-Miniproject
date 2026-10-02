@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  # ---------------- US (us-central1) ----------------
+  us-central1-redis:
+    image: redis:7-alpine
+    container_name: us-central1-redis
+    networks: [cache-net]
+
+  us-central1-worker:
+    build: ./worker
+    container_name: us-central1-worker
+    environment:
+      - REGION_ID=us-central1
+      - REDIS_HOST=us-central1-redis
+      - PEERS=europe-west1-worker:5000,asia-southeast1-worker:5000
+      - SYNC_INTERVAL_MS=500
+      - SIMULATED_LATENCY_MS=0
+    ports:
+      - "5001:5000"
+    depends_on: [us-central1-redis]
+    networks: [cache-net]
+
+  # ---------------- Europe (europe-west1) ----------------
+  europe-west1-redis:
+    image: redis:7-alpine
+    container_name: europe-west1-redis
+    networks: [cache-net]
+
+  europe-west1-worker:
+    build: ./worker
+    container_name: europe-west1-worker
+    environment:
+      - REGION_ID=europe-west1
+      - REDIS_HOST=europe-west1-redis
+      - PEERS=us-central1-worker:5000,asia-southeast1-worker:5000
+      - SYNC_INTERVAL_MS=500
+      - SIMULATED_LATENCY_MS=0
+    ports:
+      - "5002:5000"
+    depends_on: [europe-west1-redis]
+    networks: [cache-net]
+
+  # ---------------- Asia (asia-southeast1) ----------------
+  asia-southeast1-redis:
+    image: redis:7-alpine
+    container_name: asia-southeast1-redis
+    networks: [cache-net]
+
+  asia-southeast1-worker:
+    build: ./worker
+    container_name: asia-southeast1-worker
+    environment:
+      - REGION_ID=asia-southeast1
+      - REDIS_HOST=asia-southeast1-redis
+      - PEERS=us-central1-worker:5000,europe-west1-worker:5000
+      - SYNC_INTERVAL_MS=500
+      - SIMULATED_LATENCY_MS=0
+    ports:
+      - "5003:5000"
+    depends_on: [asia-southeast1-redis]
+    networks: [cache-net]
+
+networks:
+  cache-net:
+    driver: bridge
