@@ -1,0 +1,29 @@
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - cache-net
+
+  worker:
+    build: ./worker
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - cache-net
+
+networks:
+  cache-net:
+    driver: bridge
+
+volumes:
+  redis-data:
